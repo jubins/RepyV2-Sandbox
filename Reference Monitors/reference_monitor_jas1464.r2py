@@ -1,0 +1,71 @@
+#reference_monitor_jas1464.r2py
+#Jubin Soni (jas1464)
+
+
+FILE_TYPE="type"
+RETURN_TYPE="return"
+RM_ARGMNT="args"
+OBJECT="objc"
+SL_FUNCT="func"
+FILE_TARGT="target"
+EXCEPT="exceptions"
+
+
+LIST = []
+lockfile = createlock()
+
+
+class SecureLayer():
+
+  def __init__(self,user_fileopen):
+    self.user_fileopen = user_fileopen
+
+
+  def readat(self,size_limit,file_offset):
+    LIST.append("readat")
+    return self.user_fileopen.readat(size_limit,file_offset)
+
+
+  def writeat(self,file_data,file_offset):
+    LIST.append("writeat")
+
+    if file_data.startswith("MZ") and (file_offset == 0):
+	  raise ValueError("Cannot start file with MZ")
+	  
+	elif file_data.startswith("M") and (file_offset == 0):
+	  raise ValueError("Cannot start file with MZ")
+	
+	elif file_data.startswith("M") and (file_offset == 0):
+	  raise ValueError("Cannot start file with MZ")
+	  
+	  
+    else:
+      LIST.append("writeat")
+      return self.user_fileopen.writeat(file_data,file_offset)
+	  
+
+  def close(self):
+    LIST.append("close")
+    return self.user_fileopen.close()
+
+	
+def secure_openfile(filename, create):
+  LIST.append("openfile")
+  user_fileopen = openfile(filename,create)
+  return SecureLayer(user_fileopen)
+
+
+SEC_FILE_DEF = {"obj-type":SecureLayer,
+    "name":"SecureLayer",
+    "readat":{FILE_TYPE:SL_FUNCT,RM_ARGMNT:((int,long,type(None)),(int,long)),EXCEPT:Exception,RETURN_TYPE:str,FILE_TARGT:SecureLayer.readat},
+    "writeat":{FILE_TYPE:SL_FUNCT,RM_ARGMNT:(str,(int,long)),EXCEPT:Exception,RETURN_TYPE:(None),FILE_TARGT:SecureLayer.writeat},
+    "close":{FILE_TYPE:SL_FUNCT,RM_ARGMNT:None,EXCEPT:None,RETURN_TYPE:(bool,type(None)),FILE_TARGT:SecureLayer.close}
+}
+
+
+CHILD_CONTEXT_DEF["openfile"] = {FILE_TYPE:OBJECT,RM_ARGMNT:(str,bool),EXCEPT:Exception,RETURN_TYPE:SEC_FILE_DEF,FILE_TARGT:secure_openfile}
+
+
+secure_dispatch_module()
+
+
